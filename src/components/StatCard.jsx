@@ -1,0 +1,1 @@
+export default function StatCard({label,value,meta}){return <div className="card stat-card"><div className="muted">{label}</div><strong>{value}</strong>{meta&&<small>{meta}</small>}</div>}
