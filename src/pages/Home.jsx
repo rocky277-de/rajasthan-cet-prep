@@ -1,0 +1,9 @@
+import {Link} from 'react-router-dom';
+import StatCard from '../components/StatCard'; import Section from '../components/Section';
+export default function Home(){return <>
+  <section className="hero"><div><span className="eyebrow">12th Level · Smart Practice</span><h1>Rajasthan CET 2026 Preparation</h1><p>Practice, PYQs aur mock tests — ek hi focused platform par.</p><div className="hero-actions"><Link className="btn primary" to="/practice">Start Practice</Link><Link className="btn ghost" to="/tests">Take Mock Test</Link><Link className="text-btn" to="/pyq">Practice PYQs →</Link></div></div></section>
+  <Section title="Today's Target"><div className="target card"><div><strong>0 / 30</strong><p className="muted">Questions completed</p></div><div className="progress"><span style={{width:'0%'}}/></div><span className="badge">30 left</span></div></Section>
+  <Section title="Your Progress"><div className="stats-grid"><StatCard label="Preparation" value="0%"/><StatCard label="Attempted" value="0"/><StatCard label="Accuracy" value="—"/><StatCard label="Tests" value="0"/><StatCard label="Streak" value="0 days"/><StatCard label="Weak subjects" value="—"/></div></Section>
+  <Section title="Continue Practice"><div className="card continue"><div><strong>Start with Rajasthan GK</strong><p className="muted">Topic-wise practice · 10 questions</p></div><Link className="btn primary" to="/practice">Continue</Link></div></Section>
+  <Section title="Quick Practice"><div className="quick-grid">{[10,20,30,50].map(n=><Link key={n} to={`/practice?count=${n}`} className="quick card"><strong>{n}</strong><span>Questions</span></Link>)}</div></Section>
+</>}
