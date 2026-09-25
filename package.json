@@ -1,20 +1,9 @@
 {
   "name": "rajasthan-cet-2026-prep",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "validate:questions": "node scripts/validateQuestions.mjs"
-  },
-  "dependencies": {
-    "@vitejs/plugin-react": "latest",
-    "vite": "latest",
-    "react": "latest",
-    "react-dom": "latest",
-    "react-router-dom": "latest"
-  },
+  "scripts": {"dev":"vite","build":"vite build","preview":"vite preview","validate:questions":"node scripts/validateQuestions.mjs","test:smoke":"node scripts/smokeCheck.mjs"},
+  "dependencies": {"@vitejs/plugin-react":"latest","vite":"latest","react":"latest","react-dom":"latest","react-router-dom":"latest"},
   "devDependencies": {}
 }
