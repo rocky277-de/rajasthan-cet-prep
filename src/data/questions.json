@@ -1,0 +1,10 @@
+[
+  {
+    "id":"demo_cet_001","exam":"CET_12TH","year":2024,"shift":"Demo",
+    "subject":"Rajasthan GK","topic":"History","difficulty":"medium",
+    "question":"Demo question — replace with legally usable question-paper data.",
+    "options":["Option A","Option B","Option C","Option D"],
+    "correctAnswer":0,"explanation":"Demo explanation. Content should be imported from permitted sources.",
+    "source":"Project demo data","language":"hi"
+  }
+]
