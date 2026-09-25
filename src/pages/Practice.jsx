@@ -1,57 +1,24 @@
 import { useMemo, useState } from 'react';
 import { getDifficulties, getSubjects, getTopics, getQuestions } from '../data/questionLoader';
 import { loadPracticeProgress, savePracticeProgress, recordAnswer, getStats } from '../utils/practiceStorage';
+import { loadReviewData, toggleBookmark, saveNote, addWrong } from '../utils/reviewStorage';
 
 const initialProgress = loadPracticeProgress();
 
 export default function Practice() {
-  const [subject, setSubject] = useState('');
-  const [topic, setTopic] = useState('');
-  const [difficulty, setDifficulty] = useState('');
-  const [limit, setLimit] = useState(10);
-  const [started, setStarted] = useState(false);
-  const [index, setIndex] = useState(0);
-  const [selected, setSelected] = useState(null);
-  const [progress, setProgress] = useState(initialProgress);
+  const [subject,setSubject]=useState(''); const [topic,setTopic]=useState(''); const [difficulty,setDifficulty]=useState(''); const [limit,setLimit]=useState(10);
+  const [started,setStarted]=useState(false); const [index,setIndex]=useState(0); const [selected,setSelected]=useState(null); const [progress,setProgress]=useState(initialProgress);
+  const [review,setReview]=useState(loadReviewData()); const [note,setNote]=useState('');
+  const filteredQuestions=useMemo(()=>getQuestions({subject,topic,difficulty}).slice(0,Number(limit)),[subject,topic,difficulty,limit]);
+  const topics=useMemo(()=>getTopics(subject),[subject]); const stats=useMemo(()=>getStats(progress,filteredQuestions.map(q=>q.id)),[progress,filteredQuestions]); const current=filteredQuestions[index];
 
-  const filteredQuestions = useMemo(() => getQuestions({ subject, topic, difficulty }).slice(0, Number(limit)), [subject, topic, difficulty, limit]);
-  const topics = useMemo(() => getTopics(subject), [subject]);
-  const stats = useMemo(() => getStats(progress, filteredQuestions.map((q) => q.id)), [progress, filteredQuestions]);
-  const current = filteredQuestions[index];
+  function startPractice(){if(!filteredQuestions.length)return;setIndex(0);setSelected(null);setNote('');setStarted(true)}
+  function chooseAnswer(i){if(selected!==null||!current)return;const next=recordAnswer(progress,current.id,i,i===current.correctAnswer);setProgress(next);savePracticeProgress(next);if(i!==current.correctAnswer)setReview(addWrong(current.id));setSelected(i)}
+  function nextQuestion(){if(index<filteredQuestions.length-1){setIndex(v=>v+1);setSelected(null);setNote('')}else setStarted(false)}
+  function bookmark(){setReview(toggleBookmark(current.id))}
+  function saveCurrentNote(){setReview(saveNote(current.id,note))}
+  function openQuestion(i){setIndex(i);setSelected(null);setNote(review.notes[filteredQuestions[i].id]||'')}
 
-  function startPractice() {
-    if (!filteredQuestions.length) return;
-    setIndex(0); setSelected(null); setStarted(true);
-  }
-  function chooseAnswer(optionIndex) {
-    if (selected !== null || !current) return;
-    const next = recordAnswer(progress, current.id, optionIndex, optionIndex === current.correctAnswer);
-    setProgress(next); savePracticeProgress(next); setSelected(optionIndex);
-  }
-  function nextQuestion() {
-    if (index < filteredQuestions.length - 1) { setIndex((v) => v + 1); setSelected(null); }
-    else setStarted(false);
-  }
-
-  if (started && current) {
-    const isCorrect = selected === current.correctAnswer;
-    return <><div className="practice-top"><button className="btn secondary" onClick={() => setStarted(false)}>← Filters</button><span className="badge">{index + 1} / {filteredQuestions.length}</span></div>
-      <article className="question-card card"><div className="question-meta"><span>{current.subject}</span><span>{current.topic}</span><span>{current.difficulty}</span></div><h2>{current.question}</h2>
-        <div className="options">{current.options.map((option, i) => { const state = selected === null ? '' : i === current.correctAnswer ? ' correct' : selected === i ? ' wrong' : ''; return <button key={option} className={`option${state}`} onClick={() => chooseAnswer(i)} disabled={selected !== null}><span>{String.fromCharCode(65 + i)}</span>{option}</button>; })}</div>
-        {selected !== null && <div className={isCorrect ? 'feedback correct-feedback' : 'feedback wrong-feedback'}><strong>{isCorrect ? 'Correct!' : 'Not quite.'}</strong><p>{current.explanation}</p></div>}
-        {selected !== null && <button className="btn primary next-btn" onClick={nextQuestion}>{index === filteredQuestions.length - 1 ? 'Finish Practice' : 'Next Question →'}</button>}
-      </article></>;
-  }
-
-  return <><div className="page-title"><span className="eyebrow">Practice Engine</span><h1>Subject Practice</h1><p className="muted">Choose filters, answer questions, and your progress is saved locally.</p></div>
-    <div className="card practice-filters">
-      <label>Subject<select value={subject} onChange={(e) => { setSubject(e.target.value); setTopic(''); }}><option value="">All subjects</option>{getSubjects().map((s) => <option key={s}>{s}</option>)}</select></label>
-      <label>Topic<select value={topic} onChange={(e) => setTopic(e.target.value)} disabled={!subject}><option value="">All topics</option>{topics.map((t) => <option key={t}>{t}</option>)}</select></label>
-      <label>Difficulty<select value={difficulty} onChange={(e) => setDifficulty(e.target.value)}><option value="">All difficulties</option>{getDifficulties().map((d) => <option key={d}>{d}</option>)}</select></label>
-      <label>Questions<select value={limit} onChange={(e) => setLimit(e.target.value)}>{[10,20,30,50].map((n) => <option key={n} value={n}>{n}</option>)}</select></label>
-      <button className="btn primary start-btn" onClick={startPractice} disabled={!filteredQuestions.length}>Start Practice ({filteredQuestions.length})</button>
-    </div>
-    <div className="stats-grid practice-stats"><div className="card stat-card"><div className="muted">Available</div><strong>{filteredQuestions.length}</strong></div><div className="card stat-card"><div className="muted">Attempted</div><strong>{stats.attempted}</strong></div><div className="card stat-card"><div className="muted">Accuracy</div><strong>{stats.accuracy}%</strong></div></div>
-    {!filteredQuestions.length && <div className="card empty"><h3>No questions found</h3><p className="muted">Try changing filters or add valid question data.</p></div>}
-  </>;
+  if(started&&current){const isCorrect=selected===current.correctAnswer;const bookmarked=review.bookmarks.includes(current.id);return <><div className="practice-top"><button className="btn secondary" onClick={()=>setStarted(false)}>← Filters</button><span className="badge">{index+1} / {filteredQuestions.length}</span></div><article className="question-card card"><div className="question-meta"><span>{current.subject}</span><span>{current.topic}</span><span>{current.difficulty}</span></div><h2>{current.question}</h2><div className="options">{current.options.map((option,i)=>{const state=selected===null?'':i===current.correctAnswer?' correct':selected===i?' wrong':'';return <button key={option} className={`option${state}`} onClick={()=>chooseAnswer(i)} disabled={selected!==null}><span>{String.fromCharCode(65+i)}</span>{option}</button>})}</div>{selected!==null&&<div className={isCorrect?'feedback correct-feedback':'feedback wrong-feedback'}><strong>{isCorrect?'Correct!':'Not quite.'}</strong><p>{current.explanation}</p></div>}<div className="review-tools"><button className={bookmarked?'btn primary':'btn secondary'} onClick={bookmark}>{bookmarked?'★ Bookmarked':'☆ Bookmark'}</button><textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="Add your personal note..."/><button className="btn secondary" onClick={saveCurrentNote}>Save Note</button></div>{selected!==null&&<button className="btn primary next-btn" onClick={nextQuestion}>{index===filteredQuestions.length-1?'Finish Practice':'Next Question →'}</button>}</article></>}
+  return <><div className="page-title"><span className="eyebrow">Practice Engine</span><h1>Subject Practice</h1><p className="muted">Choose filters, answer questions, bookmark important ones and keep personal notes.</p></div><div className="card practice-filters"><label>Subject<select value={subject} onChange={e=>{setSubject(e.target.value);setTopic('')}}><option value="">All subjects</option>{getSubjects().map(s=><option key={s}>{s}</option>)}</select></label><label>Topic<select value={topic} onChange={e=>setTopic(e.target.value)} disabled={!subject}><option value="">All topics</option>{topics.map(t=><option key={t}>{t}</option>)}</select></label><label>Difficulty<select value={difficulty} onChange={e=>setDifficulty(e.target.value)}><option value="">All difficulties</option>{getDifficulties().map(d=><option key={d}>{d}</option>)}</select></label><label>Questions<select value={limit} onChange={e=>setLimit(e.target.value)}>{[10,20,30,50].map(n=><option key={n} value={n}>{n}</option>)}</select></label><button className="btn primary start-btn" onClick={startPractice} disabled={!filteredQuestions.length}>Start Practice ({filteredQuestions.length})</button></div><div className="stats-grid practice-stats"><div className="card stat-card"><div className="muted">Available</div><strong>{filteredQuestions.length}</strong></div><div className="card stat-card"><div className="muted">Attempted</div><strong>{stats.attempted}</strong></div><div className="card stat-card"><div className="muted">Accuracy</div><strong>{stats.accuracy}%</strong></div></div>{!filteredQuestions.length&&<div className="card empty"><h3>No questions found</h3><p className="muted">Try changing filters or add valid question data.</p></div>}</>;
 }
