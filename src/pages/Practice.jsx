@@ -1,2 +1,57 @@
-import {examConfig} from '../config/examConfig';
-export default function Practice(){return <><div className="page-title"><span className="eyebrow">Practice</span><h1>Subjects & Topics</h1><p className="muted">Phase 1 layout — practice engine will be added in Phase 3.</p></div><div className="subject-grid">{examConfig.subjects.map((s,i)=><article className="card subject" key={s.id}><div className="subject-icon">{['रा','भा','हि','En','गण','तर्क','PC'][i]}</div><div><h3>{s.name}</h3><p className="muted">0 attempted · 0% accuracy</p><div className="progress"><span style={{width:'0%'}}/></div></div><button className="btn primary">Start Practice</button></article>)}</div></>}
+import { useMemo, useState } from 'react';
+import { getDifficulties, getSubjects, getTopics, getQuestions } from '../data/questionLoader';
+import { loadPracticeProgress, savePracticeProgress, recordAnswer, getStats } from '../utils/practiceStorage';
+
+const initialProgress = loadPracticeProgress();
+
+export default function Practice() {
+  const [subject, setSubject] = useState('');
+  const [topic, setTopic] = useState('');
+  const [difficulty, setDifficulty] = useState('');
+  const [limit, setLimit] = useState(10);
+  const [started, setStarted] = useState(false);
+  const [index, setIndex] = useState(0);
+  const [selected, setSelected] = useState(null);
+  const [progress, setProgress] = useState(initialProgress);
+
+  const filteredQuestions = useMemo(() => getQuestions({ subject, topic, difficulty }).slice(0, Number(limit)), [subject, topic, difficulty, limit]);
+  const topics = useMemo(() => getTopics(subject), [subject]);
+  const stats = useMemo(() => getStats(progress, filteredQuestions.map((q) => q.id)), [progress, filteredQuestions]);
+  const current = filteredQuestions[index];
+
+  function startPractice() {
+    if (!filteredQuestions.length) return;
+    setIndex(0); setSelected(null); setStarted(true);
+  }
+  function chooseAnswer(optionIndex) {
+    if (selected !== null || !current) return;
+    const next = recordAnswer(progress, current.id, optionIndex, optionIndex === current.correctAnswer);
+    setProgress(next); savePracticeProgress(next); setSelected(optionIndex);
+  }
+  function nextQuestion() {
+    if (index < filteredQuestions.length - 1) { setIndex((v) => v + 1); setSelected(null); }
+    else setStarted(false);
+  }
+
+  if (started && current) {
+    const isCorrect = selected === current.correctAnswer;
+    return <><div className="practice-top"><button className="btn secondary" onClick={() => setStarted(false)}>← Filters</button><span className="badge">{index + 1} / {filteredQuestions.length}</span></div>
+      <article className="question-card card"><div className="question-meta"><span>{current.subject}</span><span>{current.topic}</span><span>{current.difficulty}</span></div><h2>{current.question}</h2>
+        <div className="options">{current.options.map((option, i) => { const state = selected === null ? '' : i === current.correctAnswer ? ' correct' : selected === i ? ' wrong' : ''; return <button key={option} className={`option${state}`} onClick={() => chooseAnswer(i)} disabled={selected !== null}><span>{String.fromCharCode(65 + i)}</span>{option}</button>; })}</div>
+        {selected !== null && <div className={isCorrect ? 'feedback correct-feedback' : 'feedback wrong-feedback'}><strong>{isCorrect ? 'Correct!' : 'Not quite.'}</strong><p>{current.explanation}</p></div>}
+        {selected !== null && <button className="btn primary next-btn" onClick={nextQuestion}>{index === filteredQuestions.length - 1 ? 'Finish Practice' : 'Next Question →'}</button>}
+      </article></>;
+  }
+
+  return <><div className="page-title"><span className="eyebrow">Practice Engine</span><h1>Subject Practice</h1><p className="muted">Choose filters, answer questions, and your progress is saved locally.</p></div>
+    <div className="card practice-filters">
+      <label>Subject<select value={subject} onChange={(e) => { setSubject(e.target.value); setTopic(''); }}><option value="">All subjects</option>{getSubjects().map((s) => <option key={s}>{s}</option>)}</select></label>
+      <label>Topic<select value={topic} onChange={(e) => setTopic(e.target.value)} disabled={!subject}><option value="">All topics</option>{topics.map((t) => <option key={t}>{t}</option>)}</select></label>
+      <label>Difficulty<select value={difficulty} onChange={(e) => setDifficulty(e.target.value)}><option value="">All difficulties</option>{getDifficulties().map((d) => <option key={d}>{d}</option>)}</select></label>
+      <label>Questions<select value={limit} onChange={(e) => setLimit(e.target.value)}>{[10,20,30,50].map((n) => <option key={n} value={n}>{n}</option>)}</select></label>
+      <button className="btn primary start-btn" onClick={startPractice} disabled={!filteredQuestions.length}>Start Practice ({filteredQuestions.length})</button>
+    </div>
+    <div className="stats-grid practice-stats"><div className="card stat-card"><div className="muted">Available</div><strong>{filteredQuestions.length}</strong></div><div className="card stat-card"><div className="muted">Attempted</div><strong>{stats.attempted}</strong></div><div className="card stat-card"><div className="muted">Accuracy</div><strong>{stats.accuracy}%</strong></div></div>
+    {!filteredQuestions.length && <div className="card empty"><h3>No questions found</h3><p className="muted">Try changing filters or add valid question data.</p></div>}
+  </>;
+}
