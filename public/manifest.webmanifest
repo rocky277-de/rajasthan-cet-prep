@@ -1,0 +1,11 @@
+{
+  "name":"Rajasthan CET 2026 Prep",
+  "short_name":"CET Prep",
+  "description":"Rajasthan CET 2026 12th Level preparation platform",
+  "lang":"hi",
+  "start_url":"/",
+  "display":"standalone",
+  "background_color":"#f6f8fa",
+  "theme_color":"#0f766e",
+  "icons":[]
+}
