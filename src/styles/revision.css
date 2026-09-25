@@ -1,0 +1,1 @@
+.revision-actions{display:flex;gap:8px;margin:12px 0 20px}.revision-list{display:grid;gap:10px}.revision-card{padding:15px}.revision-card h3{font-size:17px;line-height:1.4}.revision-card .question-meta{margin-bottom:8px}@media(max-width:420px){.revision-actions{display:grid;grid-template-columns:1fr}.revision-actions .btn{text-align:center}}
